@@ -17,7 +17,7 @@ CREATE TABLE ListOfContacts(
     CHECK (ContactName1<>ContactName2)
 )
     --cyclic foreign key constraint
-
+--mashu
 
 CREATE TABLE ZoomMeetings(
     StartingTime TIMESTAMP PRIMARY KEY,
