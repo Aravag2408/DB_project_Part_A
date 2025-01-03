@@ -13,9 +13,11 @@ CREATE TABLE ListOfContacts(
     FOREIGN KEY (ContactName1)
     REFERENCES Contact ON DELETE CASCADE, -- make sure we don't need - ON DELETE CASCADE,
     FOREIGN KEY (ContactName2)
-    REFERENCES Contact ON DELETE CASCADE,
+    REFERENCES Contact, -- ON DELETE CASCADE - pycharm doesn't allow us to reference twice to the same table
     CHECK (ContactName1<>ContactName2)
 )
+    --cyclic foreign key constraint
+
 
 CREATE TABLE ZoomMeetings(
     StartingTime TIMESTAMP PRIMARY KEY,
@@ -29,7 +31,7 @@ CREATE TABLE MeetingParticipation(
     FOREIGN KEY (ContactName)
     REFERENCES Contact ON DELETE CASCADE,
     FOREIGN KEY (StartingTime)
-    REFERENCES ZoomMeetings ON DELETE CASCADE,
+    REFERENCES ZoomMeetings, -- ON DELETE CASCADE, we can't use it with timestampe
     -- we can't implement on DDL there must be at least one person in a meeting!
 )
 
@@ -56,7 +58,7 @@ CREATE TABLE Folder(
     REFERENCES Folder(FolderID),
 )
 
-CREATE TABLE File(
+CREATE TABLE Files(
     FileName   VARCHAR(50),
     FileType VARCHAR(3),
     FolderID   VARCHAR(50),
@@ -73,10 +75,10 @@ CREATE TABLE DBFile(
     FileType VARCHAR(3),
     FolderID   VARCHAR(50),
     FileSize  INT,
-    CorrectFormat BOOLEAN, --recognize this field???BIT MAYBE?
+    CorrectFormat BIT, --recognize this field???BIT MAYBE?
     PRIMARY KEY (FileName, FileType, FolderID),
     FOREIGN KEY (FileName, FileType, FolderID)
-        REFERENCES File ON DELETE CASCADE -- weird
+        REFERENCES Files ON DELETE CASCADE -- weird
 )
 
 CREATE TABLE ImportantFile(
@@ -89,9 +91,9 @@ CREATE TABLE ImportantFile(
     WorkedOnHours INT, --dynamic field
     PRIMARY KEY (FileName, FileType, FolderID),
     FOREIGN KEY (FileName, FileType, FolderID)
-    REFERENCES File ON DELETE CASCADE,
+    REFERENCES Files ON DELETE CASCADE,
     FOREIGN KEY (ContactName, StartingTime)
-    REFERENCES MeetingParticipation ON DELETE CASCADE
+    REFERENCES MeetingParticipation, --ON DELETE CASCADE, problem with timestamp
     --check if aggregation needed !!!
 )
 
@@ -102,9 +104,9 @@ CREATE TABLE Access(
     FileType VARCHAR(3),
     FolderID   VARCHAR(50),
     ContactName VARCHAR(50),
-    PRIMARY KEY (aDate, FileName, FileType, FolderID, ContactName) --to be discussed
-    FOREIGN KEY (FileName, FileEnding, FolderID)
-    REFERENCES File ON DELETE CASCADE,
+    PRIMARY KEY (aDate, FileName, FileType, FolderID, ContactName), --to be discussed
+    FOREIGN KEY (FileName, FileType, FolderID)
+    REFERENCES Files ON DELETE CASCADE,
     FOREIGN KEY (ContactName)
     REFERENCES Contact ON DELETE CASCADE
 )
@@ -127,10 +129,11 @@ DROP TABLE Exceptions;
 DROP TABLE Access;
 DROP TABLE ImportantFile;
 DROP TABLE DBFile;
-DROP TABLE File;
+DROP TABLE Files;
 DROP TABLE Folder;
 DROP TABLE MeetingDelay;
 DROP TABLE MeetingParticipation;
 DROP TABLE ZoomMeetings;
 DROP TABLE ListOfContacts;
 DROP TABLE Contact;
+
