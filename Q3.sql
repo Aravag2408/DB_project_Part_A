@@ -1,52 +1,61 @@
--- creating a view for a person's saved contacts
-
+-- Creating a VIEW for contacts saved by users, including the city of the saved contact
 CREATE VIEW Saved AS
-    SELECT c1.name, cc.savedContact, c2.city
-    FROM Contacts c1, CommonContacts cc, Contacts c2
-    WHERE c1.name = cc.contactSaver AND cc.savedContact = c2.name;
+SELECT c1.name , cc.savedContact, c2.city
+FROM Contacts c1
+JOIN CommonContacts cc ON c1.name = cc.contactSaver
+JOIN Contacts c2 ON cc.savedContact = c2.name;
 
---creating a view for the contacts that saved the person + number of the contacts
-
+-- Creating a VIEW for users who saved a person, including their popularity (number of people who saved them)
 CREATE VIEW SavedMe AS
-    SELECT c.name, cc.contactSaver, count(cc.contactSaver) AS popularity
-    FROM Contacts c, CommonContacts cc
-    WHERE c.name = cc.savedContact
-    GROUP BY c.name, cc.contactSaver;
+SELECT
+    c.name,
+    cc.contactSaver,
+    COUNT(cc.contactSaver) OVER (PARTITION BY c.name) AS popularity
+FROM Contacts c
+JOIN CommonContacts cc ON c.name = cc.savedContact;
 
 
--- a popular person have contacts from at least two different cities
+-- Creating a VIEW for people with contacts in at least two different cities
+CREATE VIEW MultiContacts AS
+SELECT DISTINCT s1.name
+FROM Saved s1
+JOIN Saved s2 ON s1.name = s2.name AND s1.city <> s2.city;
 
-  CREATE VIEW MultiContacts AS
-  SELECT s1.name
-  FROM Saved s1, Saved s3
-  WHERE s1.name = s3.name AND s1.city <> s3.city
 
-
--- A view for all the contacts he saved, saved him as well + his popularity's level is larger than all of his contacts
-
+-- Creating a VIEW for popular people:
+-- They are saved by others, have contacts in multiple cities, and are more popular than all their contacts
 CREATE VIEW Popular AS
 SELECT mc.name
 FROM MultiContacts mc
-JOIN SavedMe sm on mc.name = sm.name
-WHERE NOT EXISTS(SELECT 1
-     FROM SavedMe sm1
-     WHERE sm1.name = mc.name
-     AND NOT EXISTS(SELECT 1
-                     FROM Saved s
-                     WHERE s.name=mc.name AND s.savedContact =sm1.contactSaver))
-AND sm.popularity >= ALL(SELECT sm2.popularity
-                         FROM SavedMe sm2
-                         WHERE sm2.contactSaver = mc.name);
+WHERE NOT EXISTS (
+    -- Check if there is any contact saved by this person that didn't save them back
+    SELECT 1
+    FROM Saved s
+    WHERE s.name = mc.name
+      AND NOT EXISTS (
+          SELECT 1
+          FROM Saved s2
+          WHERE s2.name = s.savedContact AND s2.savedContact = s.name
+      )
+)
+AND NOT EXISTS (
+    -- Check if any contact is equally or more popular than this person
+        SELECT 1
+        FROM Saved s
+        JOIN SavedMe sm_contact ON sm_contact.name = s.savedContact -- Popularity of the contact
+        JOIN SavedMe sm_person ON sm_person.name = mc.name          -- Popularity of the person
+        WHERE s.name = mc.name
+          AND sm_contact.popularity > sm_person.popularity -- If any contact is equally or more popular
+    );
 
 
-
---returning the value needed
-
-SELECT a.date
-FROM Attendance a, Popular p
-WHERE EXISTS(SELECT 1
-             FROM Popular p, Attendance a
-             WHERE p.name = a.ContactName)
+-- Querying the required results:
+-- Retrieving attendance dates of the popular people
+SELECT DISTINCT a.date
+FROM Attendance a
+JOIN Popular p ON a.contactName = p.name
 ORDER BY a.date ASC;
+
+
 
 
