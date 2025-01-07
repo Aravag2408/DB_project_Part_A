@@ -6,18 +6,15 @@ CREATE TABLE Contact(
 )
 
 CREATE TABLE ListOfContacts(
-    ContactName1 VARCHAR(50) PRIMARY KEY,
+    ContactName1 VARCHAR(50),
     ContactName2 VARCHAR(50),
-    --PRIMARY KEY (ContactName1, ContactName2), --or maybe like this?
-    UNIQUE (ContactName1, ContactName2), --האם זה אומר שהסדר ההפוך לא יהיה?
+    PRIMARY KEY (ContactName1, ContactName2),
     FOREIGN KEY (ContactName1)
     REFERENCES Contact ON DELETE CASCADE, -- make sure we don't need - ON DELETE CASCADE,
     FOREIGN KEY (ContactName2)
     REFERENCES Contact, -- ON DELETE CASCADE - pycharm doesn't allow us to reference twice to the same table
     CHECK (ContactName1<>ContactName2)
 )
-    --cyclic foreign key constraint
---mashu
 
 CREATE TABLE ZoomMeetings(
     StartingTime TIMESTAMP PRIMARY KEY,
@@ -31,7 +28,7 @@ CREATE TABLE MeetingParticipation(
     FOREIGN KEY (ContactName)
     REFERENCES Contact ON DELETE CASCADE,
     FOREIGN KEY (StartingTime)
-    REFERENCES ZoomMeetings, -- ON DELETE CASCADE, we can't use it with timestampe
+    REFERENCES ZoomMeetings, -- ON DELETE CASCADE, we can't use it with timestamp
     -- we can't implement on DDL there must be at least one person in a meeting!
 )
 
@@ -54,7 +51,7 @@ CREATE TABLE Folder(
     FolderName VARCHAR(50),
     CreationDate DATE,
     ParentFolderID VARCHAR(50),
-    FOREIGN KEY (ParentFolderID)
+    FOREIGN KEY (ParentFolderID) --Location in ERD
     REFERENCES Folder(FolderID),
 )
 
@@ -75,10 +72,10 @@ CREATE TABLE DBFile(
     FileType VARCHAR(3),
     FolderID   VARCHAR(50),
     FileSize  INT,
-    CorrectFormat BIT, --recognize this field???BIT MAYBE?
+    CorrectFormat BIT, --recognize this field???suppose to be boolean
     PRIMARY KEY (FileName, FileType, FolderID),
     FOREIGN KEY (FileName, FileType, FolderID)
-        REFERENCES Files ON DELETE CASCADE -- weird
+        REFERENCES Files ON DELETE CASCADE -- weird(?)
 )
 
 CREATE TABLE ImportantFile(
@@ -94,6 +91,7 @@ CREATE TABLE ImportantFile(
     REFERENCES Files ON DELETE CASCADE,
     FOREIGN KEY (ContactName, StartingTime)
     REFERENCES MeetingParticipation, --ON DELETE CASCADE, problem with timestamp
+
     --check if aggregation needed !!!
 )
 
